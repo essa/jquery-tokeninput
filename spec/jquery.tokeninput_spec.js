@@ -134,5 +134,102 @@ describe("jquery.tokeninput", function() {
       });
     });
   });
+  
+  describe("options", function() {
+    // utility functions for testing options
+    function setupTokenInput(options) {
+      setFixtures("<div id='test-token-input'><input id='target' type='text' /></div> ");
+      $("#target").tokenInput("/tags", options);
+    };
+
+    var server = null;
+    function setupFakeServer(partialToken, data) {
+      
+      server = sinon.fakeServer.create();
+      server.respondWith(
+        "GET",
+        "/tags?q=" + partialToken ,
+        [200, { "Content-Type": "application/json" }, data]
+      );
+    };
+
+    function typePartialToken(partialToken) {
+      var input = $("ul.token-input-list li.token-input-input-token input");
+      input.val(partialToken);
+      var e = $.Event('keydown');
+      e.keyCode = 65; // 'A'
+      input.trigger(e);
+    }
+
+    function selectDropdownItem() {
+      var input = $("ul.token-input-list li.token-input-input-token input");
+      var e = $.Event('keydown');
+      e.keyCode = 13; // KEY.ENTER
+      input.trigger(e);
+    }
+    
+    afterEach(function() {
+      if (this.server)
+        this.server.restore();
+    });
+
+    describe("theme specified", function() {
+      beforeEach(function() {
+        setupTokenInput({ "theme": "facebook" });
+      });
+
+      it("should render elements with class for the theme", function() {
+        expect($('#test-token-input')).toContain("ul.token-input-list-facebook");
+        expect($('#test-token-input')).toContain("ul.token-input-list-facebook li.token-input-input-token-facebook");
+      });
+    });
+
+    describe("onResult callback specified", function() {
+      var onResult = sinon.stub();
+      
+      beforeEach(function() {
+        setupTokenInput({ "onResult": onResult });
+        setupFakeServer("abc", '[{ "id":123, "name": "abcdef" }]');
+        typePartialToken("abc");
+      });
+
+      it("should call the onResult callback", function() {
+        waits(500); 
+        runs(function() {
+          server.respond();
+          expect(onResult.called).toBeTruthy();
+          expect(onResult.getCall(0).args[0]).toEqual([{ "id":123, "name": "abcdef" }]);
+        });
+      });
+      it("should use the result of the onResult callback", function() {
+        waits(500); 
+        runs(function() {
+          onResult.returns([{ "id":123, "name": "abcxyz" }]);
+          server.respond();
+          expect($('.token-input-dropdown')).toHaveText("abcxyz");
+        });
+      });
+    });
+    
+    describe("onAdd callback specified", function() {
+      var onAdd = sinon.stub();
+      
+      beforeEach(function() {
+        setupTokenInput({ "onAdd": onAdd });
+        setupFakeServer("abc", '[{ "id":123, "name": "abcdef" }]');
+        typePartialToken("abc");
+      });
+
+      it("should call the onAdd callback", function() {
+        waits(500); 
+        runs(function() {
+          server.respond();
+          selectDropdownItem();
+          expect(onAdd.called).toBeTruthy();
+          expect(onAdd.getCall(0).args[0]).toEqual({ "id":123, "name": "abcdef" });
+        });
+      });
+    });
+  });
 });
 
