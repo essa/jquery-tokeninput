@@ -276,6 +276,7 @@ $.TokenList = function (input, url_or_data, settings) {
                 case KEY.ENTER:
                 case KEY.NUMPAD_ENTER:
                 case KEY.COMMA:
+                  console.log('KEY.ENTER', selected_dropdown_item);
                   if(selected_dropdown_item) {
                     add_token($(selected_dropdown_item).data("tokeninput"));
                     hidden_input.change();
@@ -719,6 +720,7 @@ $.TokenList = function (input, url_or_data, settings) {
                 })
                 .hide();
 
+            console.log("making dropdown");
             $.each(results, function(index, value) {
                 var this_li = settings.resultsFormatter(value);
 
@@ -831,6 +833,7 @@ $.TokenList = function (input, url_or_data, settings) {
 
                 // Attach the success callback
                 ajax_params.success = function(results) {
+                  console.log("success");
                   if($.isFunction(settings.onResult)) {
                       results = settings.onResult.call(hidden_input, results);
                   }
@@ -838,12 +841,15 @@ $.TokenList = function (input, url_or_data, settings) {
 
                   // only populate the dropdown if the results are associated with the active search query
                   if(input_box.val() === query) {
+                      console.log("success dropdown");
                       populate_dropdown(query, settings.jsonContainer ? results[settings.jsonContainer] : results);
                   }
                 };
 
                 // Make the request
+                console.log("ajax");
                 $.ajax(ajax_params);
+                console.log("ajax end");
             } else if(settings.local_data) {
                 // Do the search through local data
                 var results = $.grep(settings.local_data, function (row) {
